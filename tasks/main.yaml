@@ -1,0 +1,63 @@
+---
+- service:
+   name: docker
+   state: started
+- file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+    group: docker
+  with_items:
+    - "{{ nginx_build_dir }}"
+    - "{{ nginx_key_dir }}"
+    - "{{ nginx_cert_dir }}"
+- name: copy docker ingredients
+  copy:
+    src: Dockerfile
+    dest: "{{ nginx_build_dir }}"
+- name: docker build
+  shell: docker build -t timcinel/nginx .
+  args:
+    chdir: "{{ nginx_build_dir }}"
+- name: copy configuration files
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ nginx_build_dir }}/{{ item.src | basename }}"
+  with_items: "{{ nginx_configuration_files }}"
+- name: copy https keys
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ nginx_key_dir }}/{{ item.dest_name }}"
+    owner: root
+    group: nginx
+    mode: 0440
+  with_items: "{{ nginx_ssl_keys }}"
+- name: copy https certs
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ nginx_cert_dir }}/{{ item.dest_name }}"
+    owner: root
+    group: nginx
+    mode: 0440
+  with_items: "{{ nginx_ssl_certs }}"
+- set_fact:
+    nginx_key_volumes: "{{ nginx_ssl_keys | default([]) | ssl_list(nginx_key_dir, '/etc/ssl/private') }}"
+- set_fact:
+    nginx_cert_volumes: "{{ nginx_ssl_certs | default([]) | ssl_list(nginx_cert_dir, '/etc/ssl/certs') }}"
+- set_fact:
+    nginx_configuration_volumes: "{{ nginx_configuration_files | default([]) | config_list(nginx_build_dir) }}"
+- set_fact:
+    nginx_volume_list: "{{ nginx_key_volumes + nginx_cert_volumes + nginx_configuration_volumes + nginx_custom_volumes }}"
+- debug:
+    var: nginx_volume_list
+- docker:
+    image: timcinel/nginx
+    name: nginx
+    state: reloaded
+    restart_policy: unless-stopped
+    pull: missing
+    volumes: "{{ nginx_volume_list }}"
+    volumes_from: "{{ nginx_docker_volumes_from }}"
+    ports: "{{ nginx_docker_ports }}"
+    memory_limit: "{{ nginx_docker_memory_limit }}"
+    net: "{{ nginx_docker_network }}"
