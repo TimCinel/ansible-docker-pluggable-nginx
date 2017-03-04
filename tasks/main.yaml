@@ -16,9 +16,10 @@
     src: Dockerfile
     dest: "{{ nginx_build_dir }}"
 - name: docker build
-  shell: docker build -t timcinel/nginx .
-  args:
-    chdir: "{{ nginx_build_dir }}"
+  docker_image:
+    path: "{{ nginx_build_dir }}"
+    name: "{{ nginx_docker_image_name }}"
+    tag: latest
 - name: copy configuration files
   copy:
     src: "{{ item.src }}"
@@ -50,14 +51,13 @@
     nginx_volume_list: "{{ nginx_key_volumes + nginx_cert_volumes + nginx_configuration_volumes + nginx_custom_volumes }}"
 - debug:
     var: nginx_volume_list
-- docker:
-    image: timcinel/nginx
+- docker_container:
     name: nginx
-    state: reloaded
-    restart_policy: unless-stopped
-    pull: missing
+    image: "{{ nginx_docker_image_name }}"
+    state: started
     volumes: "{{ nginx_volume_list }}"
     volumes_from: "{{ nginx_docker_volumes_from }}"
-    ports: "{{ nginx_docker_ports }}"
-    memory_limit: "{{ nginx_docker_memory_limit }}"
-    net: "{{ nginx_docker_network }}"
+    published_ports: "{{ nginx_docker_ports }}"
+    memory: "{{ nginx_docker_memory_limit }}"
+    networks:
+      - name: "{{ nginx_docker_network }}"

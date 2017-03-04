@@ -1,11 +1,12 @@
 ---
 nginx_build_dir: /opt/nginx
+nginx_docker_image_name: timcinel/nginx
 nginx_key_dir: /opt/nginx/keys
 nginx_cert_dir: /opt/nginx/certs
 nginx_docker_volumes_from: []
 nginx_docker_ports:
   - "80:80"
   - "443:443"
-nginx_docker_memory_limit: 150000000
+nginx_docker_memory_limit: 150M
 nginx_docker_network: "nginx"
 nginx_custom_volumes: []
