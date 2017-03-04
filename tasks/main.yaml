@@ -32,6 +32,7 @@
     owner: root
     group: nginx
     mode: 0440
+    force: "{{ nginx_replace_keys }}"
   with_items: "{{ nginx_ssl_keys }}"
 - name: copy https certs
   copy:
@@ -40,15 +41,16 @@
     owner: root
     group: nginx
     mode: 0440
+    force: "{{ nginx_replace_certs }}"
   with_items: "{{ nginx_ssl_certs }}"
 - set_fact:
-    nginx_key_volumes: "{{ nginx_ssl_keys | default([]) | ssl_list(nginx_key_dir, '/etc/ssl/private') }}"
+    nginx_key_volumes: "{{ nginx_key_dir }}:/etc/ssl/private"
 - set_fact:
-    nginx_cert_volumes: "{{ nginx_ssl_certs | default([]) | ssl_list(nginx_cert_dir, '/etc/ssl/certs') }}"
+    nginx_cert_volumes: "{{ nginx_cert_dir}}:/etc/ssl/certs"
 - set_fact:
     nginx_configuration_volumes: "{{ nginx_configuration_files | default([]) | config_list(nginx_build_dir) }}"
 - set_fact:
-    nginx_volume_list: "{{ nginx_key_volumes + nginx_cert_volumes + nginx_configuration_volumes + nginx_custom_volumes }}"
+    nginx_volume_list: "{{ [nginx_key_volumes] + [nginx_cert_volumes] + nginx_configuration_volumes + nginx_custom_volumes }}"
 - debug:
     var: nginx_volume_list
 - docker_container:

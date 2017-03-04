@@ -10,3 +10,7 @@ nginx_docker_ports:
 nginx_docker_memory_limit: 150M
 nginx_docker_network: "nginx"
 nginx_custom_volumes: []
+
+# set to false if using letsencrypt / certbot
+nginx_replace_keys: true
+nginx_replace_certs: true
